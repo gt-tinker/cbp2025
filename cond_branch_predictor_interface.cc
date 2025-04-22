@@ -54,7 +54,9 @@ void notify_instr_fetch(uint64_t seq_no, uint8_t piece, uint64_t pc, const uint6
 bool get_cond_dir_prediction(uint64_t seq_no, uint8_t piece, uint64_t pc, const uint64_t pred_cycle)
 {
     const bool tage_sc_l_pred =  cbp2016_tage_sc_l.predict(seq_no, piece, pc);
-    const bool my_prediction = cond_predictor_impl.predict(seq_no, piece, pc, tage_sc_l_pred);
+    const bool tage_use_sc = cbp2016_tage_sc_l.use_sc;
+    const bool tage_use_loop = cbp2016_tage_sc_l.use_loop;
+    const bool my_prediction = cond_predictor_impl.predict(seq_no, piece, pc, tage_sc_l_pred, tage_use_loop, tage_use_sc);
     return my_prediction;
 }
 
@@ -96,7 +98,9 @@ void spec_update(uint64_t seq_no, uint8_t piece, uint64_t pc, InstClass inst_cla
 
     if(inst_class == InstClass::condBranchInstClass)
     {
-        cbp2016_tage_sc_l.history_update(seq_no, piece, pc, br_type, pred_dir, resolve_dir, next_pc);
+        // todo: figure to how to get tage to train based on its own decisions not the ones we inserted
+        bool tage_pred = cond_predictor_impl.get_tage_pred(seq_no, piece, pc);
+        cbp2016_tage_sc_l.history_update(seq_no, piece, pc, br_type, tage_pred, resolve_dir, next_pc);
         cond_predictor_impl.history_update(seq_no, piece, pc, resolve_dir, next_pc);
     }
     else

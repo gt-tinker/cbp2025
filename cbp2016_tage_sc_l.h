@@ -485,6 +485,9 @@ class CBP2016_TAGE_SC_L
         bool LowConf;
         bool HighConf;
 
+        bool use_loop;
+        bool use_sc;
+
         // checkpointed in history
         //int8_t WITHLOOP;    // counter to monitor whether or not loop prediction is beneficial
 
@@ -1027,6 +1030,8 @@ class CBP2016_TAGE_SC_L
         bool predict_using_given_hist (uint64_t seq_no, uint8_t piece, UINT64 PC, const cbp_hist_t& hist_to_use, const bool pred_time_predict)
         {
             // computes the TAGE table addresses and the partial tags
+            use_loop = false;
+            use_sc = false;
             Tagepred (PC, hist_to_use);
             bool pred_taken = tage_pred;
 #ifndef SC
@@ -1035,6 +1040,7 @@ class CBP2016_TAGE_SC_L
 
 #ifdef LOOPPREDICTOR
             predloop = getloop (PC, hist_to_use);   // loop prediction
+            use_loop = ((hist_to_use.WITHLOOP >= 0) && (LVALID));
             pred_taken = ((hist_to_use.WITHLOOP >= 0) && (LVALID)) ? predloop : pred_taken;
 #endif
             pred_inter = pred_taken;
@@ -1091,17 +1097,20 @@ class CBP2016_TAGE_SC_L
             // but just uses 2 counters 0.3 % MPKI reduction
             if (pred_inter != SCPRED)
             {
+                use_sc = true;
                 //Choser uses TAGE confidence and |LSUM|
                 pred_taken = SCPRED;
                 if (HighConf)
                 {
                     if ((abs (LSUM) < THRES / 4))
                     {
+                        use_sc = false;
                         pred_taken = pred_inter;
                     }
 
                     else if ((abs (LSUM) < THRES / 2))
                     {
+                        use_sc = (SecondH < 0);
                         pred_taken = (SecondH < 0) ? SCPRED : pred_inter;
                     }
                 }
@@ -1109,6 +1118,7 @@ class CBP2016_TAGE_SC_L
                 if (MedConf)
                     if ((abs (LSUM) < THRES / 4))
                     {
+                        use_sc = (FirstH < 0);
                         pred_taken = (FirstH < 0) ? SCPRED : pred_inter;
                     }
 

@@ -33,7 +33,8 @@ DEPS = cbp.h cond_branch_predictor_interface.h my_cond_branch_predictor.h
 
 DEBUG=0
 ifeq ($(DEBUG), 1)
-	CC += -ggdb3
+	CC += -ggdb3 -g
+	OPT = -O0
 endif
 
 
